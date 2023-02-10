@@ -15,3 +15,4 @@ The core algorithm of this application comes from [CrystalDiskInfo 8.17.14](http
 
 - COPYRIGHT.txt
 - LICENSE.txt
+- Icon made by ipapun from www.freeicons.io
