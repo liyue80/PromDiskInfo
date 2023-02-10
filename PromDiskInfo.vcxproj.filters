@@ -102,5 +102,6 @@
   <ItemGroup>
     <Text Include="LICENSE.txt" />
     <Text Include="COPYRIGHT.txt" />
+    <Text Include="README.md" />
   </ItemGroup>
 </Project>

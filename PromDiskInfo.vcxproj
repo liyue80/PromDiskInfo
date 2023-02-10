@@ -214,6 +214,9 @@ copy /y "$(ProjectDir)COPYRIGHT.txt" "$(TargetDir)."</Command>
     <None Include="language\English.lang">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
     </None>
+    <Text Include="README.md">
+      <FileType>Document</FileType>
+    </Text>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="PromDiskInfo.rc" />
