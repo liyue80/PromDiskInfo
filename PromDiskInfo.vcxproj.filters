@@ -78,4 +78,12 @@
       <Filter>Prscilla</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="DiskInfo.ini">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="language\English.lang">
+      <Filter>Resource Files</Filter>
+    </None>
+  </ItemGroup>
 </Project>

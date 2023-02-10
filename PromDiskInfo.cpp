@@ -3,25 +3,15 @@
 
 #include "stdafx.h"
 #include <iostream>
-#include "AtaSmart.h"
+
 #include "Priscilla/UtilityFx.h"
+#include "DiskInfo.h"
 
 int main()
 {
-    CAtaSmart ata;
-    BOOL bFlag = FALSE;
-    SetDebugMode(2);
-
-    HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED);
-    if (FAILED(hr))
-    {
-        //m_iStatus = ERROR_COINITIALIZE_EX;
-        return 0;
-    }
-
-    ata.Init(TRUE, TRUE, &bFlag, FALSE, FALSE, FALSE);
-    
-    CoUninitialize();
+    SetDebugMode(0);
+    CDiskInfo diskInfo;
+    diskInfo.SaveText(L"C:\\Temp\\~DiskInfo.txt");
 
     return 0;
 }

@@ -1,13 +1,361 @@
 #include "stdafx.h"
 
 #include <sysinfoapi.h>
-#include "AtaSmart.h"
 #include "DiskInfo.h"
+#include "AtaSmart.h"
+#include "Priscilla/OsInfoFx.h"
+#include "Priscilla/UtilityFx.h"
+#include <iostream>
 
-void CDiskInfo::SaveText(std::wstring fileName)
+#define SMART_INI					_T("Smart.ini")
+
+CDiskInfo::CDiskInfo()
+    : m_bHideSerialNumber(HIDE_SERIAL_NUMBER)
+    , m_bHideNoSmartDisk(HIDE_NO_SMART_DISK)
+    , m_bDumpIdentifyDevice(DUMP_IDENTIFY_DEVICE)
+    , m_bDumpSmartReadData(DUMP_SMART_READ_DATA)
+    , m_bDumpSmartReadThreshold(DUMP_SMART_READ_THRESHOLD)
+    , m_bAsciiView(ASCII_VIEW)
+    , m_NowDetectingUnitPowerOnHours(FALSE)
 {
+#pragma region MyRegion
+    TCHAR *ptrEnd;
+    TCHAR ini[MAX_PATH];
+    ::GetModuleFileName(NULL, ini, MAX_PATH);
+    if ((ptrEnd = _tcsrchr(ini, '\\')) != NULL)
+    {
+        *ptrEnd = '\0';
+        m_Ini = ini;
+        m_SmartDir = ini;
+        m_DefaultLangPath = ini;
+        // _tcscat_s(ini, MAX_PATH, _T("\\DiskInfo.ini"));
+    }
+    m_Ini += _T("\\DiskInfo.ini");
+    m_SmartDir += _T("\\Smart\\");
+    m_DefaultLangPath += _T("\\language\\English.lang");
+#pragma endregion
+
+    HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED);
+    if (FAILED(hr))
+        return;
+
+    BOOL bFlag = FALSE;
+    m_Ata.SetAtaPassThroughSmart(TRUE);
+    InitAta(1, 0, NULL, 0, 1);
+
+    CoUninitialize();
+}
+
+void CDiskInfo::InitAta(BOOL useWmi, BOOL advancedDiskSearch, PBOOL flagChangeDisk, BOOL workaroundHD204UI, BOOL workaroundAdataSsd)
+{
+    m_Ata.Init(useWmi, advancedDiskSearch, flagChangeDisk, workaroundHD204UI, workaroundAdataSsd, m_bHideNoSmartDisk);
+
+    DWORD errorCount = 0;
+    for (int i = 0; i < m_Ata.vars.GetCount(); i++)
+    {
+        int unitType = GetPrivateProfileIntFx(_T("PowerOnUnit"), m_Ata.vars[i].ModelSerial, -1, m_Ini);
+        if (unitType >= 0)
+        {
+            if (m_Ata.vars[i].DetectedTimeUnitType == m_Ata.POWER_ON_MILLI_SECONDS)
+            {
+                unitType = m_Ata.POWER_ON_MILLI_SECONDS;
+            }
+            else if (m_Ata.vars[i].DetectedTimeUnitType == m_Ata.POWER_ON_10_MINUTES)
+            {
+                unitType = m_Ata.POWER_ON_10_MINUTES;
+            }
+            m_Ata.vars[i].MeasuredTimeUnitType = unitType;
+            m_Ata.vars[i].MeasuredPowerOnHours = m_Ata.GetPowerOnHoursEx(i, unitType);
+        }
+        else if (m_Ata.vars[i].PowerOnRawValue > 0)
+        {
+            errorCount++;
+        }
+
+        //m_bAutoRefreshTarget[i] = GetPrivateProfileIntFx(_T("AutoRefreshTarget"), m_Ata.vars[i].ModelSerial, 1, m_Ini);
+        if (m_Ata.vars[i].IsSsd)
+        {
+            m_Ata.vars[i].AlarmTemperature = GetPrivateProfileIntFx(_T("AlarmTemperature"), m_Ata.vars[i].ModelSerial, 60, m_Ini);
+        }
+        else
+        {
+            m_Ata.vars[i].AlarmTemperature = GetPrivateProfileIntFx(_T("AlarmTemperature"), m_Ata.vars[i].ModelSerial, 50, m_Ini);
+        }
+        m_Ata.vars[i].AlarmHealthStatus = GetPrivateProfileIntFx(_T("AlarmHealthStatus"), m_Ata.vars[i].ModelSerial, 1, m_Ini);
+
+        m_Ata.vars[i].Threshold05 = (WORD)GetPrivateProfileIntFx(_T("ThreasholdOfCaution05"), m_Ata.vars[i].ModelSerial, 1, m_Ini);
+        m_Ata.vars[i].ThresholdC5 = (WORD)GetPrivateProfileIntFx(_T("ThreasholdOfCautionC5"), m_Ata.vars[i].ModelSerial, 1, m_Ini);
+        m_Ata.vars[i].ThresholdC6 = (WORD)GetPrivateProfileIntFx(_T("ThreasholdOfCautionC6"), m_Ata.vars[i].ModelSerial, 1, m_Ini);
+        m_Ata.vars[i].ThresholdFF = (WORD)GetPrivateProfileIntFx(_T("ThreasholdOfCautionFF"), m_Ata.vars[i].ModelSerial, 10, m_Ini);
+
+        m_Ata.vars[i].DiskStatus = m_Ata.CheckDiskStatus(i);
+        //DebugPrint(_T("SaveSmartInfo(i)"));
+        SaveSmartInfo(i);
+    }
+
+    if (errorCount)
+    {
+        m_NowDetectingUnitPowerOnHours = TRUE;
+    }
+
 #if 0
-     std::wstring clip = L"\
+    DebugPrint(_T("AutoAamApmAdaption()"));
+    AutoAamApmAdaption();
+
+    DebugPrint(_T("UpdateShareInfo()"));
+    UpdateShareInfo();
+#endif
+}
+
+void CDiskInfo::SaveSmartInfo(DWORD i)
+{
+    if (!m_Ata.vars[i].IsSmartCorrect)
+    {
+        return;
+    }
+    static CTime preTime[CAtaSmart::MAX_DISK] = { 0 };
+    CTime time = CTime::GetTickCount();
+
+#pragma region ∑¿÷π∏ﬂ∆µ≤È—Ø
+#if 0
+    if (time - preTime[i] < SAVE_SMART_PERIOD)
+    {
+        return;
+    }
+    else
+    {
+        preTime[i] = time;
+    }
+#endif
+#pragma endregion
+
+    CString line;
+    CString cstr;
+    CStdioFile outFile;
+    CString dir;
+    CString disk;
+    CString path;
+    BOOL flagFirst = FALSE;
+    TCHAR str[256];
+
+    dir = m_SmartDir;
+    CreateDirectory(dir, NULL);
+
+    disk = m_Ata.vars[i].ModelSerial;
+    dir += disk;
+    CreateDirectory(dir, NULL);
+
+    // AlarmHealthStatus(i, dir, disk);
+
+    // Computer Name
+    // 
+    DWORD length = 256;
+    GetComputerNameW(str, &length);
+    WritePrivateProfileStringFx(L"PC", L"ComputerName", str, dir + _T("\\") + SMART_INI);
+
+    GetPrivateProfileStringFx(disk, _T("Date"), _T(""), str, 256, dir + _T("\\") + SMART_INI);
+    cstr = str;
+    if (cstr.IsEmpty())
+    {
+        flagFirst = TRUE;
+        _stprintf_s(str, 256, _T("%s"), time.Format(_T("%Y/%m/%d %H:%M:%S")).GetBuffer());
+        WritePrivateProfileStringFx(disk + _T("FIRST"), _T("Date"), str, dir + _T("\\") + SMART_INI);
+
+        _stprintf_s(str, 256, _T("%d"), m_Ata.vars[i].DiskStatus);
+        WritePrivateProfileStringFx(disk + _T("FIRST"), _T("HealthStatus"), str, dir + _T("\\") + SMART_INI);
+    }
+
+    // Check Threshold of Reallocated Sectors Count
+    GetPrivateProfileStringFx(disk + _T("THRESHOLD"), _T("05"), _T(""), str, 256, dir + _T("\\") + SMART_INI);
+    cstr = str;
+    if (cstr.IsEmpty())
+    {
+        flagFirst = TRUE;
+    }
+
+    _stprintf_s(str, 256, _T("%s"), time.Format(_T("%Y/%m/%d %H:%M:%S")).GetBuffer());
+    WritePrivateProfileStringFx(disk, _T("Date"), str, dir + _T("\\") + SMART_INI);
+
+    _stprintf_s(str, 256, _T("%d"), m_Ata.vars[i].DiskStatus);
+    WritePrivateProfileStringFx(disk, _T("HealthStatus"), str, dir + _T("\\") + SMART_INI);
+
+    if (m_Ata.vars[i].Temperature > -300)
+    {
+        AppendLog(dir, disk, _T("Temperature"), time, m_Ata.vars[i].Temperature, flagFirst);
+    }
+
+    if (m_Ata.vars[i].MeasuredPowerOnHours > 0 && m_NowDetectingUnitPowerOnHours == FALSE)
+    {
+        AppendLog(dir, disk, _T("PowerOnHours"), time, m_Ata.vars[i].MeasuredPowerOnHours, flagFirst);
+    }
+
+    if (m_Ata.vars[i].PowerOnCount >= 0)
+    {
+        AppendLog(dir, disk, _T("PowerOnCount"), time, m_Ata.vars[i].PowerOnCount, flagFirst);
+    }
+
+    if (m_Ata.vars[i].Life >= 0)
+    {
+        AppendLog(dir, disk, _T("Life"), time, m_Ata.vars[i].Life, flagFirst);
+    }
+
+    if (m_Ata.vars[i].HostWrites >= 0)
+    {
+        AppendLog(dir, disk, _T("HostWrites"), time, m_Ata.vars[i].HostWrites, flagFirst);
+    }
+
+    if (m_Ata.vars[i].HostReads >= 0)
+    {
+        AppendLog(dir, disk, _T("HostReads"), time, m_Ata.vars[i].HostReads, flagFirst);
+    }
+
+    if (m_Ata.vars[i].NandWrites >= 0)
+    {
+        AppendLog(dir, disk, _T("NandWrites"), time, m_Ata.vars[i].NandWrites, flagFirst);
+    }
+
+    if (m_Ata.vars[i].GBytesErased >= 0)
+    {
+        AppendLog(dir, disk, _T("GBytesErased"), time, m_Ata.vars[i].GBytesErased, flagFirst);
+    }
+
+    if (m_Ata.vars[i].WearLevelingCount >= 0)
+    {
+        AppendLog(dir, disk, _T("WearLevelingCount"), time, m_Ata.vars[i].WearLevelingCount, flagFirst);
+    }
+
+    for (DWORD j = 0; j < m_Ata.vars[i].AttributeCount; j++)
+    {
+        cstr.Format(_T("%02X"), m_Ata.vars[i].Attribute[j].Id);
+        AppendLog(dir, disk, cstr, time, m_Ata.vars[i].Attribute[j].CurrentValue,
+            flagFirst, m_Ata.vars[i].Threshold[j].ThresholdValue);
+
+        switch (m_Ata.vars[i].Attribute[j].Id)
+        {
+        case 0x05: // Reallocated Sectors Count
+            AppendLog(dir, disk, _T("ReallocatedSectorsCount"), time,
+                MAKEWORD(m_Ata.vars[i].Attribute[j].RawValue[0], m_Ata.vars[i].Attribute[j].RawValue[1]), flagFirst);
+            break;
+        case 0xC4: // Reallocation Event Count
+            AppendLog(dir, disk, _T("ReallocationEventCount"), time,
+                MAKEWORD(m_Ata.vars[i].Attribute[j].RawValue[0], m_Ata.vars[i].Attribute[j].RawValue[1]), flagFirst);
+            break;
+        case 0xC5: // Current Pending Sector Count
+            AppendLog(dir, disk, _T("CurrentPendingSectorCount"), time,
+                MAKEWORD(m_Ata.vars[i].Attribute[j].RawValue[0], m_Ata.vars[i].Attribute[j].RawValue[1]), flagFirst);
+            break;
+        case 0xC6: // Off-Line Scan Uncorrectable Sector Count
+            AppendLog(dir, disk, _T("UncorrectableSectorCount"), time,
+                MAKEWORD(m_Ata.vars[i].Attribute[j].RawValue[0], m_Ata.vars[i].Attribute[j].RawValue[1]), flagFirst);
+            break;
+        default:
+            break;
+        }
+    }
+}
+
+BOOL CDiskInfo::AppendLog(CString dir, CString disk, CString file, CTime time, int value, BOOL flagFirst, int threshold)
+{
+    TCHAR str[256];
+
+    // First Time
+    if (flagFirst)
+    {
+        wsprintf(str, _T("%d"), value);
+        WritePrivateProfileStringFx(disk + _T("FIRST"), file, str, dir + _T("\\") + SMART_INI);
+
+        if (file.GetLength() == 2)
+        {
+            wsprintf(str, _T("%d"), threshold);
+            WritePrivateProfileStringFx(disk + _T("THRESHOLD"), file, str, dir + _T("\\") + SMART_INI);
+        }
+    }
+
+    GetPrivateProfileStringFx(disk, file, _T("-1"), str, 256, dir + _T("\\") + SMART_INI);
+    int pre = _tstoi(str);
+
+    if (pre != value)
+    {
+        // Update
+        wsprintf(str, _T("%d"), value);
+        WritePrivateProfileStringFx(disk, file, str, dir + _T("\\") + SMART_INI);
+
+        CString line;
+        line.Format(_T("%s,%d\n"), time.Format(_T("%Y/%m/%d %H:%M:%S")).GetString(), value);
+
+        CStdioFile outFile;
+        if (outFile.Open(dir + _T("\\") + file + _T(".csv"),
+            CFile::modeCreate | CFile::modeNoTruncate | CFile::modeReadWrite | CFile::typeText))
+        {
+            ULONGLONG fileLength = outFile.GetLength();
+            try
+            {
+                if (outFile.SeekToEnd() == fileLength)
+                {
+                    outFile.WriteString(line);
+                }
+            }
+            catch (CFileException * e)
+            {
+                DebugPrint(L"CFileException");
+                e->Delete();
+            }
+            outFile.Close();
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+CString CDiskInfo::__Number(DWORD value)
+{
+    CString cstr;
+
+    if (value >= 1000)
+    {
+        cstr = _T("");
+    }
+    else if (value >= 100)
+    {
+        cstr.Format(_T("%3d"), value);
+    }
+    else if (value >= 10)
+    {
+        cstr.Format(_T("_%2d"), value);
+    }
+    else
+    {
+        cstr.Format(_T("__%1d"), value);
+    }
+
+    return cstr;
+}
+
+CString CDiskInfo::GetDiskStatus(DWORD statusCode)
+{
+    switch (statusCode)
+    {
+    case CAtaSmart::DISK_STATUS_GOOD:
+        return i18n(_T("DiskStatus"), _T("GOOD"));
+        break;
+    case CAtaSmart::DISK_STATUS_CAUTION:
+        return i18n(_T("DiskStatus"), _T("CAUTION"));
+        break;
+    case CAtaSmart::DISK_STATUS_BAD:
+        return i18n(_T("DiskStatus"), _T("BAD"));
+        break;
+    case CAtaSmart::DISK_STATUS_UNKNOWN:
+    default:
+        return i18n(_T("DiskStatus"), _T("UNKNOWN"));
+        break;
+    }
+}
+
+void CDiskInfo::SaveText(CString fileName)
+{
+    CString cstr, clip, driveTemplate, drive, feature, temp, line, csd;
+
+    clip = _T("\
 ----------------------------------------------------------------------------\r\n\
 %PRODUCT% %VERSION% (C) %COPY_YEAR% hiyohiyo\r\n\
                                 Crystal Dew World: https://crystalmark.info/\r\n\
@@ -21,26 +369,22 @@ void CDiskInfo::SaveText(std::wstring fileName)
 \r\n\
 -- Disk List ---------------------------------------------------------------\r\n\
 %DISK_LIST%\
-\r\n";
-
-    // clip.replace(L"%PRODUCT%", PRODUCT_NAME);
-    std::regex_replace(clip, std::wregex(L"%PRODUCT%"), PRODUCT_NAME);
-    //clip.Replace(_T("%VERSION%"), PRODUCT_VERSION);
-    std::regex_replace(clip, std::wregex(L"%VERSION%"), PRODUCT_VERSION);
-    //clip.Replace(_T("%COPY_YEAR%"), PRODUCT_COPY_YEAR);
-    std::regex_replace(clip, std::wregex(L"%COPY_YEAR%"), PRODUCT_COPY_YEAR);
+\r\n");
+    clip.Replace(_T("%PRODUCT%"), PRODUCT_NAME);
+    CString version;
+    version = PRODUCT_VERSION;
+#ifdef SUISHO_SHIZUKU_SUPPORT
+    version += _T(" ") PRODUCT_EDITION;
+#endif
+    clip.Replace(_T("%VERSION%"), version);
+    clip.Replace(_T("%COPY_YEAR%"), PRODUCT_COPY_YEAR);
 
     SYSTEMTIME st;
     GetLocalTime(&st);
-    //cstr.Format(_T("%04d/%02d/%02d %d:%02d:%02d"), st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
-    //clip.Replace(_T("%DATE%"), cstr);
-    wchar_t str[64];
-    std::swprintf(str, 64, L"%04d/%02d/%02d %d:%02d:%02d",
-        st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
-    std::regex_replace(clip, std::wregex(L"%DATE%"), str);
+    cstr.Format(_T("%04d/%02d/%02d %d:%02d:%02d"), st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
+    clip.Replace(_T("%DATE%"), cstr);
 
     clip.Replace(_T("%CONTROLLER_MAP%"), m_Ata.m_ControllerMap);
-
 
     GetOsName(cstr);
     clip.Replace(_T("%OS%"), cstr);
@@ -111,6 +455,8 @@ void CDiskInfo::SaveText(std::wstring fileName)
 
     for (int i = 0; i < m_Ata.vars.GetCount(); i++)
     {
+        CAtaSmart::ATA_SMART_INFO *pCurSI = &(m_Ata.vars[i]);
+
         if (m_Ata.vars[i].DiskVendorId == m_Ata.SSD_VENDOR_NVME)
         {
             driveTemplate = _T("\
@@ -596,7 +942,7 @@ void CDiskInfo::SaveText(std::wstring fileName)
         clip += drive;
 
         CString vendorSpecific;
-        vendorSpecific = i18n(_T("Smart"), _T("VENDOR_SPECIFIC"), m_bSmartEnglish);
+        vendorSpecific = i18n(_T("Smart"), _T("VENDOR_SPECIFIC"));
 
         if (m_Ata.vars[i].AttributeCount > 0)
         {
@@ -630,26 +976,12 @@ void CDiskInfo::SaveText(std::wstring fileName)
 
                 cstr.Format(_T("%02X"), m_Ata.vars[i].Attribute[j].Id);
 
-                if (m_bSmartEnglish)
-                {
-                    GetPrivateProfileStringFx(m_Ata.vars[i].SmartKeyName, cstr, vendorSpecific, str, 256, m_DefaultLangPath);
-                }
-                else
-                {
-                    GetPrivateProfileStringFx(m_Ata.vars[i].SmartKeyName, cstr, L"", str, 256, m_DefaultLangPath);
-                    CString en = str;
-                    if (en.IsEmpty())
-                    {
-                        GetPrivateProfileStringFx(m_Ata.vars[i].SmartKeyName, cstr, vendorSpecific, str, 256, m_CurrentLangPath);
-                    }
-                    else
-                    {
-                        GetPrivateProfileStringFx(m_Ata.vars[i].SmartKeyName, cstr, en, str, 256, m_CurrentLangPath);
-                    }
-                }
+                GetPrivateProfileStringFx(m_Ata.vars[i].SmartKeyName, cstr, vendorSpecific, str, 256, m_DefaultLangPath);
 
                 if (m_Ata.vars[i].DiskVendorId == m_Ata.SSD_VENDOR_NVME)
                 {
+                    //SMART_ATTRIBUTE smartAttr = pSmartInfo->Attribute[j];
+
                     cstr.Format(_T("%02X %02X%02X%02X%02X%02X%02X %s\r\n"),
                         m_Ata.vars[i].Attribute[j].Id,
                         m_Ata.vars[i].Attribute[j].RawValue[5],
@@ -914,30 +1246,14 @@ void CDiskInfo::SaveText(std::wstring fileName)
         }
     }
 
+#if 1
     if (fileName.IsEmpty())
     {
-        if (OpenClipboard())
-        {
-            HGLOBAL clipbuffer;
-            TCHAR* buffer;
-            EmptyClipboard();
-            clipbuffer = GlobalAlloc(GMEM_DDESHARE, sizeof(TCHAR) * ((size_t)clip.GetLength() + 1));
-            if (clipbuffer) {
-                buffer = (TCHAR*)GlobalLock(clipbuffer);
-                if (buffer) {
-                    _tcscpy_s(buffer, (size_t)clip.GetLength() + 1, LPCTSTR(clip));
-                    GlobalUnlock(clipbuffer);
-#ifdef _UNICODE
-                    SetClipboardData(CF_UNICODETEXT, clipbuffer);
-#else
-                    SetClipboardData(CF_OEMTEXT, clipbuffer);
-#endif
-                    CloseClipboard();
-                }
-            }
-        }
+        std::wcout << (LPCTSTR)clip << std::endl;
     }
     else
+#endif
+
     {
         CT2A utf8(clip, CP_UTF8);
 
@@ -948,5 +1264,15 @@ void CDiskInfo::SaveText(std::wstring fileName)
             file.Close();
         }
     }
-#endif
+}
+
+CString CDiskInfo::i18n(CString section, CString key)
+{
+    TCHAR str[256];
+    CString cstr;
+
+    GetPrivateProfileStringFx(section, key, _T(""), str, 256, m_DefaultLangPath);
+    cstr = str;
+
+    return cstr;
 }

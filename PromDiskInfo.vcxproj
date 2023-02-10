@@ -100,6 +100,12 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <PostBuildEvent>
+      <Command>if not exist "$(TargetDir)language\" mkdir "$(TargetDir)language\"
+copy /y "$(ProjectDir)language\English.lang" "$(TargetDir)language\."
+copy /y "$(ProjectDir)DiskInfo.ini" "$(TargetDir)."
+</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -115,6 +121,12 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <PostBuildEvent>
+      <Command>if not exist "$(TargetDir)language\" mkdir "$(TargetDir)language\"
+copy /y "$(ProjectDir)language\English.lang" "$(TargetDir)language\."
+copy /y "$(ProjectDir)DiskInfo.ini" "$(TargetDir)."
+</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -134,6 +146,12 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <PostBuildEvent>
+      <Command>if not exist "$(TargetDir)language\" mkdir "$(TargetDir)language\"
+copy /y "$(ProjectDir)language\English.lang" "$(TargetDir)language\."
+copy /y "$(ProjectDir)DiskInfo.ini" "$(TargetDir)."
+</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -151,6 +169,12 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <PostBuildEvent>
+      <Command>if not exist "$(TargetDir)language\" mkdir "$(TargetDir)language\"
+copy /y "$(ProjectDir)language\English.lang" "$(TargetDir)language\."
+copy /y "$(ProjectDir)DiskInfo.ini" "$(TargetDir)."
+</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="AtaSmart.cpp" />
@@ -173,6 +197,14 @@
     <ClInclude Include="SPTIUtil.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="StorageQuery.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="DiskInfo.ini">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </None>
+    <None Include="language\English.lang">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </None>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
