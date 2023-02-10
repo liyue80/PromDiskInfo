@@ -9,7 +9,28 @@
 
 void printUsage(BOOL bVerbose = FALSE)
 {
+    CString brief = _T("\
+Dump disk info into disk file.\r\n\
+");
+    CString verbose = _T("\
+%EXE% [/H] [/O filename]\r\n\
+\r\n\
+  /H        Show command usage.\r\n\
+  /O        Specify output file.\r\n\
+");
 
+    _tprintf_s(_T("%s"), (LPCTSTR)brief);
+    if (bVerbose)
+    {
+        TCHAR szModuleName[MAX_PATH];
+        GetModuleFileName(NULL, szModuleName, MAX_PATH);
+        TCHAR *ptrEnd = _tcsrchr(szModuleName, '\\');
+        if (ptrEnd != NULL)
+        {
+            verbose.Replace(_T("%EXE%"), ++ptrEnd);
+        }
+        _tprintf_s(_T("\r\n%s\r\n"), (LPCTSTR)verbose);
+    }
 }
 
 constexpr UINT_PTR str2int(const TCHAR* str, int h = 0)
@@ -42,12 +63,12 @@ int argc, char **argv
             {
             case str2int(_T("?")):
             case str2int(_T("h")):
-            case str2int(_T("help")):
+            case str2int(_T("H")):
                 printUsage(TRUE);
                 return 0;
 
             case str2int(_T("o")):
-            case str2int(_T("out")):
+            case str2int(_T("O")):
                 if (++i < argc)
                 {
                     strOutFile = argv[i];
