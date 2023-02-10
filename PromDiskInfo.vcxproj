@@ -217,6 +217,10 @@ copy /y "$(ProjectDir)DiskInfo.ini" "$(TargetDir)."
   <ItemGroup>
     <Image Include="..\..\..\Downloads\hdd.ico" />
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="COPYRIGHT.txt" />
+    <Text Include="LICENSE.txt" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
