@@ -222,7 +222,7 @@ copy /y "$(ProjectDir)COPYRIGHT.txt" "$(TargetDir)."</Command>
     <ResourceCompile Include="PromDiskInfo.rc" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="..\..\..\Downloads\hdd.ico" />
+    <Image Include="hdd.ico" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="COPYRIGHT.txt" />
