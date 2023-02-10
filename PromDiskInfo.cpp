@@ -9,9 +9,16 @@
 
 void printUsage(BOOL bVerbose = FALSE)
 {
+    CString copyright = _T("\
+------------------------------------------------------------------\r\n\
+%PRODUCT% %VERSION% (C) %COPY_YEAR% www.promise.com\r\n\
+------------------------------------------------------------------\r\n\
+");
+
     CString brief = _T("\
 Dump disk info into disk file.\r\n\
 ");
+
     CString verbose = _T("\
 %EXE% [/H] [/O filename]\r\n\
 \r\n\
@@ -19,7 +26,12 @@ Dump disk info into disk file.\r\n\
   /O        Specify output file.\r\n\
 ");
 
-    _tprintf_s(_T("%s"), (LPCTSTR)brief);
+    copyright.Replace(_T("%PRODUCT%"), PRODUCT_NAME);
+    copyright.Replace(_T("%VERSION%"), PRODUCT_VERSION);
+    copyright.Replace(_T("%COPY_YEAR%"), PRODUCT_COPY_YEAR);
+
+    _tprintf_s(_T("%s%s"), (LPCTSTR)copyright, (LPCTSTR)brief);
+
     if (bVerbose)
     {
         TCHAR szModuleName[MAX_PATH];

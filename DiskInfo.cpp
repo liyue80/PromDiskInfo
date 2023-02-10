@@ -364,8 +364,7 @@ void CDiskInfo::SaveText(const CString &fileName)
 
     clip = _T("\
 ----------------------------------------------------------------------------\r\n\
-%PRODUCT% %VERSION% (C) %COPY_YEAR% hiyohiyo\r\n\
-                                Crystal Dew World: https://crystalmark.info/\r\n\
+%PRODUCT% %VERSION% (C) %COPY_YEAR% www.promise.com\r\n\
 ----------------------------------------------------------------------------\r\n\
 \r\n\
     OS : %OS%\r\n\
@@ -378,12 +377,7 @@ void CDiskInfo::SaveText(const CString &fileName)
 %DISK_LIST%\
 \r\n");
     clip.Replace(_T("%PRODUCT%"), PRODUCT_NAME);
-    CString version;
-    version = PRODUCT_VERSION;
-#ifdef SUISHO_SHIZUKU_SUPPORT
-    version += _T(" ") PRODUCT_EDITION;
-#endif
-    clip.Replace(_T("%VERSION%"), version);
+    clip.Replace(_T("%VERSION%"), PRODUCT_VERSION);
     clip.Replace(_T("%COPY_YEAR%"), PRODUCT_COPY_YEAR);
 
     SYSTEMTIME st;
