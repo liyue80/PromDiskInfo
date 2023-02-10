@@ -9,7 +9,7 @@ public:
 
     void InitAta(BOOL useWmi, BOOL advancedDiskSearch, PBOOL flagChangeDisk, BOOL workaroundHD204UI, BOOL workaroundAdataSsd);
     void SaveSmartInfo(DWORD i);
-    void SaveText(CString fileName);
+    void SaveText(const CString &fileName);
 
 protected:
     CAtaSmart m_Ata;

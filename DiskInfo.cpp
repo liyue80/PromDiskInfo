@@ -5,7 +5,8 @@
 #include "AtaSmart.h"
 #include "Priscilla/OsInfoFx.h"
 #include "Priscilla/UtilityFx.h"
-#include <iostream>
+#include <io.h>
+#include <fcntl.h>
 #include <fileapi.h>
 
 #define SMART_INI					_T("Smart.ini")
@@ -357,7 +358,7 @@ CString CDiskInfo::GetDiskStatus(DWORD statusCode)
     }
 }
 
-void CDiskInfo::SaveText(CString fileName)
+void CDiskInfo::SaveText(const CString &fileName)
 {
     CString cstr, clip, driveTemplate, drive, feature, temp, line, csd;
 
@@ -1252,22 +1253,27 @@ void CDiskInfo::SaveText(CString fileName)
         }
     }
 
-#if 1
     if (fileName.IsEmpty())
     {
-        std::wcout << (LPCTSTR)clip << std::endl;
+        _setmode(_fileno(stdout), _O_U16TEXT);
+        _tprintf_s(_T("%s\n"), (LPCTSTR)clip);
     }
     else
-#endif
-
     {
         CT2A utf8(clip, CP_UTF8);
 
         CFile file;
-        if (file.Open(fileName, CFile::modeCreate | CFile::modeWrite))
+        CFileException e;
+        if (file.Open(fileName, CFile::modeCreate | CFile::modeWrite, &e))
         {
             file.Write((char*)utf8, (UINT)strlen(utf8));
             file.Close();
+        }
+        else
+        {
+            TCHAR szError[1024];
+            e.GetErrorMessage(szError, 1024);
+            _tprintf_s(_T("File could not be created %s\n"), szError);
         }
     }
 }

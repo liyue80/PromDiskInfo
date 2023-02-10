@@ -7,9 +7,8 @@
 
 #include "../stdafx.h"
 #include "UtilityFx.h"
-
 #include <io.h>
-#include <iostream>
+#include <fcntl.h>
 #pragma comment(lib,"version.lib")
 
 ////------------------------------------------------
@@ -75,7 +74,9 @@ void DebugPrint(CString cstr)
 
 	if (debugMode == DEBUG_MODE_MESSAGE)
 	{
-        std::wcout << (LPCTSTR)output << std::endl;
+        // std::wcout << (LPCTSTR)output << std::endl;
+        _setmode(_fileno(stdout), _O_U16TEXT);
+        _tprintf_s(_T("%s\n"), (LPCTSTR)output);
 	}
 }
 
