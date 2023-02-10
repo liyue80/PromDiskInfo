@@ -43,6 +43,8 @@ Dump disk info into disk file.\r\n\
         }
         _tprintf_s(_T("\r\n%s\r\n"), (LPCTSTR)verbose);
     }
+
+    _tprintf_s(_T("\r\nIcon made by ipapun from www.freeicons.io\r\n\r\n"));
 }
 
 constexpr UINT_PTR str2int(const TCHAR* str, int h = 0)
