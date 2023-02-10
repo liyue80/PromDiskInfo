@@ -105,7 +105,8 @@
       <Command>if not exist "$(TargetDir)language\" mkdir "$(TargetDir)language\"
 copy /y "$(ProjectDir)language\English.lang" "$(TargetDir)language\."
 copy /y "$(ProjectDir)DiskInfo.ini" "$(TargetDir)."
-</Command>
+copy /y "$(ProjectDir)LICENSE.txt" "$(TargetDir)."
+copy /y "$(ProjectDir)COPYRIGHT.txt" "$(TargetDir)."</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -127,7 +128,8 @@ copy /y "$(ProjectDir)DiskInfo.ini" "$(TargetDir)."
       <Command>if not exist "$(TargetDir)language\" mkdir "$(TargetDir)language\"
 copy /y "$(ProjectDir)language\English.lang" "$(TargetDir)language\."
 copy /y "$(ProjectDir)DiskInfo.ini" "$(TargetDir)."
-</Command>
+copy /y "$(ProjectDir)LICENSE.txt" "$(TargetDir)."
+copy /y "$(ProjectDir)COPYRIGHT.txt" "$(TargetDir)."</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -153,7 +155,8 @@ copy /y "$(ProjectDir)DiskInfo.ini" "$(TargetDir)."
       <Command>if not exist "$(TargetDir)language\" mkdir "$(TargetDir)language\"
 copy /y "$(ProjectDir)language\English.lang" "$(TargetDir)language\."
 copy /y "$(ProjectDir)DiskInfo.ini" "$(TargetDir)."
-</Command>
+copy /y "$(ProjectDir)LICENSE.txt" "$(TargetDir)."
+copy /y "$(ProjectDir)COPYRIGHT.txt" "$(TargetDir)."</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -177,7 +180,8 @@ copy /y "$(ProjectDir)DiskInfo.ini" "$(TargetDir)."
       <Command>if not exist "$(TargetDir)language\" mkdir "$(TargetDir)language\"
 copy /y "$(ProjectDir)language\English.lang" "$(TargetDir)language\."
 copy /y "$(ProjectDir)DiskInfo.ini" "$(TargetDir)."
-</Command>
+copy /y "$(ProjectDir)LICENSE.txt" "$(TargetDir)."
+copy /y "$(ProjectDir)COPYRIGHT.txt" "$(TargetDir)."</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
