@@ -2,13 +2,6 @@
 
 #include "AtaSmart.h"
 
-// Timer
-static const int TIMER_SET_POWER_ON_UNIT = 0x2001;
-static const int TIMER_AUTO_REFRESH = 0x2002;
-static const int TIMER_FORCE_REFRESH = 0x2003;
-static const int TIMER_AUTO_DETECT = 0x2004;
-static const int TIMER_UPDATE_TRAY_ICON = 0x2005;
-
 class CDiskInfo
 {
 public:

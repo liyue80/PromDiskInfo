@@ -6,6 +6,7 @@
 #include "Priscilla/OsInfoFx.h"
 #include "Priscilla/UtilityFx.h"
 #include <iostream>
+#include <fileapi.h>
 
 #define SMART_INI					_T("Smart.ini")
 
@@ -18,7 +19,7 @@ CDiskInfo::CDiskInfo()
     , m_bAsciiView(ASCII_VIEW)
     , m_NowDetectingUnitPowerOnHours(FALSE)
 {
-#pragma region MyRegion
+#pragma region Folders and files for reading
     TCHAR *ptrEnd;
     TCHAR ini[MAX_PATH];
     ::GetModuleFileName(NULL, ini, MAX_PATH);
@@ -26,13 +27,18 @@ CDiskInfo::CDiskInfo()
     {
         *ptrEnd = '\0';
         m_Ini = ini;
-        m_SmartDir = ini;
         m_DefaultLangPath = ini;
         // _tcscat_s(ini, MAX_PATH, _T("\\DiskInfo.ini"));
     }
     m_Ini += _T("\\DiskInfo.ini");
-    m_SmartDir += _T("\\Smart\\");
     m_DefaultLangPath += _T("\\language\\English.lang");
+#pragma endregion
+
+#pragma region Folder for writing
+    TCHAR tmpdir[MAX_PATH];
+    ::GetTempPath(MAX_PATH, tmpdir);
+    m_SmartDir = tmpdir;
+    m_SmartDir += _T("CC8030C4870F\\");
 #pragma endregion
 
     HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED);
