@@ -23,7 +23,7 @@
     <ProjectGuid>{2B94EF95-A949-4AFF-8573-64CEB0FD1A21}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>PromDiskInfo</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.19041.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -227,6 +227,9 @@ copy /y "$(ProjectDir)COPYRIGHT.txt" "$(TargetDir)."</Command>
   <ItemGroup>
     <Text Include="COPYRIGHT.txt" />
     <Text Include="LICENSE.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Manifest Include="osvi.manifest" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

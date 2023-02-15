@@ -95,7 +95,7 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="..\..\..\Downloads\hdd.ico">
+    <Image Include="hdd.ico">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>
@@ -103,5 +103,10 @@
     <Text Include="LICENSE.txt" />
     <Text Include="COPYRIGHT.txt" />
     <Text Include="README.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <Manifest Include="osvi.manifest">
+      <Filter>Resource Files</Filter>
+    </Manifest>
   </ItemGroup>
 </Project>
